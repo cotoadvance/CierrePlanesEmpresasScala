@@ -508,7 +508,7 @@ object ProcesoDiario {
             ((lit(100) - coalesce($"DSC_PUNTUAL_5", lit(0))) / lit(100))
           ).cast("int")
       ).
-      withColumn("FECHA_PROC", current_date()).
+      withColumn("FECHA_PROC", date_format(current_timestamp(), "yyyyMMdd HH:mm:ss")).
       withColumn("PERIODO", date_format(current_date(), "yyyyMM")).
       withColumn(
         "TIPO_PRODUCTO",

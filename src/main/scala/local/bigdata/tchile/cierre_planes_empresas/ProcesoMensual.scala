@@ -451,7 +451,7 @@ object ProcesoMensual {
           ((lit(100) - coalesce($"DSC_PUNTUAL_5", lit(0))) / lit(100))
         ).cast("int")
       ).
-      withColumn("FECHA_PROC", lit(java.time.LocalDateTime.now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).cast("date")).
+      withColumn("FECHA_PROC", date_format(current_timestamp(), "yyyyMMdd HH:mm:ss")).
       withColumn("PERIODO", lit(processPeriod)).
       withColumn(
         "TIPO_DSC",
