@@ -3,8 +3,8 @@ package local.bigdata.tchile.cierre_planes_empresas
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,6 +76,7 @@ object ProcesoMensual {
         and trim($"payment_category_desc").isin("Postpaid Payment", "Hybrid Payment")
         and $"valid_ind" === 1
         and $"sistema_origen" === "AMD"
+       // and $"SUBSCRIBER_KEY" === "166698732"
       ).
       withColumn("PRODUCT_KEY", trim($"PRODUCT_KEY")).
       withColumn("SUBSCRIBER_KEY", trim($"SUBSCRIBER_KEY")).
@@ -185,6 +186,7 @@ object ProcesoMensual {
           and trim($"payment_category_desc").isin("Postpaid Payment", "Hybrid Payment")
           and $"valid_ind" === 1
           and $"sistema_origen" === "AMD"
+          //and $"parqueMovilColiving.SUBSCRIBER_KEY" === "166698732"
       ).
       join(
         assignedProductParameter,
@@ -347,7 +349,7 @@ object ProcesoMensual {
       select("SUBSCRIBER_KEY", "CHARGE_VAL", "ITEM_NAME")
 
     val descuentosParametrizablesStg = descuentosParametrizables.
-      withColumn("PARAMETER_VALUE", $"PARAMETER_VALUE".cast("int")).
+      //withColumn("PARAMETER_VALUE", $"PARAMETER_VALUE".cast("int")).
       withColumn("ASSIGNED_PRODUCT_PARAMETER_ID", lower($"ASSIGNED_PRODUCT_PARAMETER_ID")).
       select("SUBSCRIBER_KEY", "PARAMETER_VALUE", "ASSIGNED_PRODUCT_KEY", "ASSIGNED_PRODUCT_PARAMETER_ID")
 
@@ -394,7 +396,7 @@ object ProcesoMensual {
       join(cargosFacturados, parqueMovilColiving("SUBSCRIBER_KEY") === cargosFacturados("SUBSCRIBER_KEY"), "left").
       withColumn("RAZON_SOCIAL", regexp_replace($"CUSTOMER_NAME", "|", "")).
       withColumn("PLAN", regexp_replace(parqueMovilColiving("PRODUCT_DESC"), "|", "")).
-      withColumn("ARPU", coalesce(cargosFacturados("ARPU"), lit(0))).
+      withColumn("ARPU", coalesce(cargosFacturados("ARPU"), lit(0)).cast("int")).
       withColumn("CARGO_FIJO_DATOS", coalesce($"cargosFijosCargoDatos.CHARGE_VAL", lit(0))).
       withColumn("CARGO_FIJO_VOZ", coalesce($"cargosFijosCargoVoz.CHARGE_VAL", lit(0))).
       withColumn("DESC_CARGO_FIJO_DATOS", coalesce($"cargosFijosDescDatos.CHARGE_VAL", lit(0))).
@@ -415,7 +417,7 @@ object ProcesoMensual {
             coalesce($"DSC_ADICIONAL_DATOS", lit(0)) =!= 0,
             ($"CARGO_FIJO_DATOS" - $"DESC_CARGO_FIJO_DATOS") * (lit(100) - coalesce($"DSC_ADICIONAL_DATOS", lit(0))) / lit(100) ).
             otherwise($"CARGO_FIJO_DATOS" - $"DESC_CARGO_FIJO_DATOS")
-        )
+        ).cast("int")
       ).
       withColumn(
         "ARPU_VOZ",
@@ -426,9 +428,10 @@ object ProcesoMensual {
         otherwise(
           when(
             coalesce($"DSC_ADICIONAL_VOZ", lit(0)) =!= 0,
-            ($"DSC_ADICIONAL_VOZ" - $"CARGO_FIJO_VOZ") * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100) ).
+            //($"DSC_ADICIONAL_VOZ" - $"CARGO_FIJO_VOZ") * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100) ).
+            ($"CARGO_FIJO_VOZ" - $"DESC_CARGO_FIJO_VOZ") * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100) ).
             otherwise($"CARGO_FIJO_VOZ" - $"DESC_CARGO_FIJO_VOZ")
-          )
+          ).cast("int")
       ).
       withColumn("DSC_PUNTUAL_1", $"descuentosPuntuales1.CHARGE_VAL").
       withColumn("TIPO_DSC_PUNTUAL_1", when(!$"DSC_PUNTUAL_1".isNull, $"descuentosPuntuales1.tipo_dsc_punt").otherwise(lit(null))).

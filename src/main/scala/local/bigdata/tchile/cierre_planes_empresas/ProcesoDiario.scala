@@ -483,7 +483,8 @@ object ProcesoDiario {
           otherwise(
             when(
               coalesce($"DSC_ADICIONAL_VOZ", lit(0)) =!= 0,
-              ($"DSC_ADICIONAL_VOZ" - $"CARGO_FIJO_VOZ") * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100)).
+              //($"DSC_ADICIONAL_VOZ" - $"CARGO_FIJO_VOZ") * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100)).
+              ($"CARGO_FIJO_VOZ" - $"DESC_CARGO_FIJO_VOZ" ) * (lit(100) - coalesce($"DSC_ADICIONAL_VOZ", lit(0))) / lit(100)).
               otherwise($"CARGO_FIJO_VOZ" - $"DESC_CARGO_FIJO_VOZ")
           )
       ).
@@ -607,7 +608,7 @@ object ProcesoDiario {
         $"PERIODO",
         $"TIPO_PRODUCTO",
         $"TIPO_DSC",
-        rcConfigurableDiscount("ORIGINAL_ACTIVATION_DATE").as("FECHA_ACTIVACION"),
+        date_format(rcConfigurableDiscount("ORIGINAL_ACTIVATION_DATE"),"yyyyMMdd").as("FECHA_ACTIVACION"),
         rcConfigurableDiscount("PRODUCT_VALID_FROM_DATE").as("FECHA_CREA_PLAN")
       ).
       distinct().
